@@ -1,8 +1,10 @@
 # Colorize Black & White Anime Arts with Color Control
 
 Colorize Black & White Anime Arts with user's input colors
+| Gray | Fake | Real |
+| --- | --- | --- |
+| ![gray](./assets/gray.jpg "gray") | ![fake](./assets/fake.jpg "fake") | ![real](./assets/test_img.jpg "real") |
 
-![](./ "")
 
 ## Environments and Dependencies
 

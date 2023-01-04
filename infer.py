@@ -22,11 +22,11 @@ models.load_state_dict(torch.load(TEST_CONFIG["pretrained"]))
 models.eval()
 
 # Get gray tensor
-if TEST_CONFIG["test_rgb"] is not None or TEST_CONFIG["test_rgb"] != "":
+if TEST_CONFIG["test_rgb"] is not None and TEST_CONFIG["test_rgb"] != "":
     rgb_img = Image.open(TEST_CONFIG["test_rgb"]).convert("RGB")
     ab_tensor = rgb2lab(ToTensor()(rgb_img).unsqueeze(0))[:,1:,:,:]
     gray_tensor = rgb2lab(ToTensor()(rgb_img).unsqueeze(0))[:,:1,:,:]
-elif TEST_CONFIG["test_gray"] is not None or TEST_CONFIG["test_gray"] != "":
+elif TEST_CONFIG["test_gray"] is not None and TEST_CONFIG["test_gray"] != "":
     gray_img = Image.open(TEST_CONFIG["test_rgb"]).convert("L")
     gray_tensor = rgb2lab(ToTensor()(gray_img).unsqueeze(0))
 else:
@@ -35,11 +35,10 @@ else:
 
 
 # Get hint tensor
-if TEST_CONFIG["hint_rgb"].lower() == "random":
-    
-    hint = Image.new(mode="RGB", size=(256, 256)).convert("LAB")
-elif TEST_CONFIG["hint_rgb"] is not None or TEST_CONFIG["hint_rgb"] != "":
+
+if TEST_CONFIG["hint_rgb"] is not None and TEST_CONFIG["hint_rgb"] != "":
     hint = Image.open(TEST_CONFIG["hint_rgb"]).convert("LAB") 
+
 else:
     hint = Image.new(mode="RGB", size=(256, 256)).convert("LAB")
 hint_tensor = rgb2lab(ToTensor()(hint).unsqueeze(0))[:,1:,:,:]
@@ -52,11 +51,11 @@ mask_tensor -= 0.5
 outputs = models(gray_tensor, hint_tensor, mask_tensor)
 
 # save results
-if TEST_CONFIG["test_rgb"] is not None or TEST_CONFIG["test_rgb"] != "":
+if TEST_CONFIG["test_rgb"] is not None and TEST_CONFIG["test_rgb"] != "":
     gray_image = lab2rgb(torch.cat((gray_tensor.type(torch.FloatTensor), torch.zeros_like(hint_tensor).type(torch.FloatTensor)), dim=1))
     real_image = lab2rgb(torch.cat((gray_tensor.type(torch.FloatTensor), ab_tensor.type(torch.FloatTensor)), dim=1))
     fake_image = lab2rgb(torch.cat((gray_tensor.type(torch.FloatTensor), outputs[1].type(torch.FloatTensor)), dim=1))
-elif TEST_CONFIG["test_gray"] is not None or TEST_CONFIG["test_gray"] != "":
+elif TEST_CONFIG["test_gray"] is not None and TEST_CONFIG["test_gray"] != "":
     gray_image = lab2rgb(torch.cat((gray_tensor.type(torch.FloatTensor), torch.zeros_like(hint_tensor).type(torch.FloatTensor)), dim=1))
     real_image = gray_image
     fake_image = lab2rgb(torch.cat((gray_tensor.type(torch.FloatTensor), outputs[1].type(torch.FloatTensor)), dim=1))
