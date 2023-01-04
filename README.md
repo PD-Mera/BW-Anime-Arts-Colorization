@@ -1,4 +1,4 @@
-# Colorize Black & White Anime Arts with Color Control
+# Colorize Black & White Anime Arts with User's input colors
 
 Colorize Black & White Anime Arts with user's input colors
 | Gray | Fake | Real |
