@@ -1,0 +1,6 @@
+__pycache__/
+data*/
+venv*/
+checkpoints/
+results/
+sample/
