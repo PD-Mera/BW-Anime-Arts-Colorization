@@ -3,6 +3,8 @@ from torch import nn
 import functools
 import numpy as np
 
+A = 2 * 110.0 / 10.0 + 1
+B = A
 
 def get_norm_layer(norm_type='instance'):
     if norm_type == 'batch':
@@ -16,7 +18,6 @@ def get_norm_layer(norm_type='instance'):
     return norm_layer
 
 
-
 def tensor2im(input_image, imtype=np.uint8):
     if isinstance(input_image, torch.Tensor):
         image_tensor = input_image.data
@@ -27,8 +28,6 @@ def tensor2im(input_image, imtype=np.uint8):
         image_numpy = np.tile(image_numpy, (3, 1, 1))
     image_numpy = np.clip((np.transpose(image_numpy, (1, 2, 0)) ),0, 1) * 255.0
     return image_numpy.astype(imtype)
-
-
 
 
 # Color conversion code
@@ -147,3 +146,59 @@ def lab2rgb(lab_rs):
         # print('lab2rgb')
         # embed()
     return out
+
+
+def decode_ind_ab(data_q):
+    # Decode index into ab value
+    # INPUTS
+    #   data_q      Nx1xHxW \in [0,Q)
+    # OUTPUTS
+    #   data_ab     Nx2xHxW \in [-1,1]
+    
+    data_a = data_q/ A
+    data_b = data_q - data_a * A
+    data_ab = torch.cat((data_a,data_b),dim=1)
+
+    if(data_q.is_cuda):
+        type_out = torch.cuda.FloatTensor
+    else:
+        type_out = torch.FloatTensor
+    data_ab = ((data_ab.type(type_out)*10.0) - 110.0) / 110.0
+
+    return data_ab
+
+
+def decode_max_ab(data_ab_quant):
+    # Decode probability distribution by using bin with highest probability
+    # INPUTS
+    #   data_ab_quant   NxQxHxW \in [0,1]
+    # OUTPUTS
+    #   data_ab         Nx2xHxW \in [-1,1]
+
+    data_q = torch.argmax(data_ab_quant, dim=1)[:,None,:,:]
+    return decode_ind_ab(data_q)
+
+
+def decode_mean(data_ab_quant):
+    # Decode probability distribution by taking mean over all bins
+    # INPUTS
+    #   data_ab_quant   NxQxHxW \in [0,1]
+    # OUTPUTS
+    #   data_ab_inf     Nx2xHxW \in [-1,1]
+
+    (N,Q,H,W) = data_ab_quant.shape
+    a_range = torch.arange(-110.0, 110.0 + 10.0, step=10.0).to(data_ab_quant.device)[None,:,None,None]
+    a_range = a_range.type(data_ab_quant.type())
+
+    # reshape to AB space
+    data_ab_quant = data_ab_quant.view((N,int(A),int(A),H,W))
+    data_a_total = torch.sum(data_ab_quant,dim=2)
+    data_b_total = torch.sum(data_ab_quant,dim=1)
+
+    # matrix multiply
+    data_a_inf = torch.sum(data_a_total * a_range,dim=1,keepdim=True)
+    data_b_inf = torch.sum(data_b_total * a_range,dim=1,keepdim=True)
+
+    data_ab_inf = torch.cat((data_a_inf,data_b_inf),dim=1)/110.0
+
+    return data_ab_inf

@@ -1,9 +1,18 @@
 # Colorize Black & White Anime Arts with User's input colors
 
 Colorize Black & White Anime Arts with user's input colors
+
+**No Hint**
+
 | Gray | Fake | Real |
 | --- | --- | --- |
-| ![gray](./assets/gray.jpg "gray") | ![fake](./assets/fake.jpg "fake") | ![real](./assets/test_img.jpg "real") |
+| ![gray](./assets/imgs/gray.jpg "gray") | ![fake_nohint](./assets/no_hint/fake.jpg "fake_nohint") | ![real_nohint](./assets/imgs/test_img.jpg "real") |
+
+**Local Hint**
+
+| Gray | Local Hint | Fake | Real |
+| --- | --- | --- | --- |
+| ![gray](./assets/imgs/gray.jpg "gray") | ![local_hint](./assets/imgs/local/hint.jpg "local_hint") | ![fake](./assets/imgs/local/fake.jpg "fake") | ![real](./assets/imgs/test_img.jpg "real") |
 
 
 ## Environments and Dependencies
@@ -68,6 +77,10 @@ Update hyperparameter in `test.sh` and valid a model using
 ``` bash
 bash test.sh
 ```
+
+## TODO
+
+- [ ] Add Global Hints
 
 ## Acknowledgments
 

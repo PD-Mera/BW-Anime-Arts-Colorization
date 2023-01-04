@@ -287,6 +287,7 @@ def encode_ab_ind(data_ab, opt):
     return data_q
 
 def decode_ind_ab(data_q, opt):
+    
     # Decode index into ab value
     # INPUTS
     #   data_q      Nx1xHxW \in [0,Q)
