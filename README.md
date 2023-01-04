@@ -6,7 +6,7 @@ Colorize Black & White Anime Arts with user's input colors
 
 | Gray | Fake | Real |
 | --- | --- | --- |
-| ![gray](./assets/imgs/gray.jpg "gray") | ![fake_nohint](./assets/no_hint/fake.jpg "fake_nohint") | ![real_nohint](./assets/imgs/test_img.jpg "real") |
+| ![gray](./assets/imgs/gray.jpg "gray") | ![fake_nohint](./assets/imgs/no_hint/fake.jpg "fake_nohint") | ![real_nohint](./assets/imgs/test_img.jpg "real") |
 
 **Local Hint**
 
