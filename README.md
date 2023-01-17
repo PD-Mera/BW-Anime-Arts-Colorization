@@ -89,6 +89,7 @@ bash test.sh
 ## TODO
 
 - [x] Add Global Hints
+- [ ] Improve Global Hints
 
 ## Acknowledgments
 
