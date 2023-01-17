@@ -5,6 +5,9 @@ from util import util
 from .base_model import BaseModel
 from . import networks
 import numpy as np
+import os
+from .model_util import NNEncode
+
 
 
 class Pix2PixModel(BaseModel):
@@ -117,8 +120,38 @@ class Pix2PixModel(BaseModel):
 
         self.real_B_enc = util.encode_ab_ind(self.real_B[:, :, ::4, ::4], self.opt)
 
+        #########################################
+        self.NN = 1.
+        self.sigma = 3.
+        self.ENC_DIR = './data/color_bins'
+        self.nnenc = NNEncode(self.NN, self.sigma, km_filepath=os.path.join(self.ENC_DIR, 'pts_in_hull.npy'))
+
+        self.hint_G = self.nnenc.encode_points_mtx_nd(self.real_B[:, :, ::4, ::4], axis=1)
+        self.hint_G = self.hint_G.type(torch.FloatTensor)
+        self.hint_G = torch.nan_to_num(self.hint_G, nan=0.0, posinf=0.0, neginf=0.0)
+        self.hint_G = torch.mean(self.hint_G, dim=3)
+        self.hint_G = torch.mean(self.hint_G, dim=2)
+
+
+        self.hint_S = input['S'].to(self.device)
+        self.hint_S = torch.mean(self.hint_S, dim=3)
+        self.hint_S = torch.mean(self.hint_S, dim=2)
+
+        ###########################################
+
     def forward(self):
-        (self.fake_B_class, self.fake_B_reg) = self.netG(self.real_A, self.hint_B, self.mask_B)
+        self.mask_G = torch.randint(0, 2, (self.hint_G.size()[0], 1))
+        self.mask_G_not = torch.ones_like(self.mask_G) - self.mask_G
+
+        self.mask_S = torch.randint(0, 2, (self.hint_S.size()[0], 1)).cuda()
+        self.hint_G = torch.mul(self.hint_G, torch.tile(self.mask_G, (1, 313))) + self.mask_G_not / 313
+        self.hint_S = torch.mul(self.hint_S, self.mask_S)
+
+
+        (self.fake_B_class, self.fake_B_reg) = self.netG(self.real_A, self.hint_B, self.mask_B, 
+                                                                      self.hint_G.unsqueeze(2).unsqueeze(3), self.mask_G.unsqueeze(2).unsqueeze(3), 
+                                                                      self.hint_S.unsqueeze(2).unsqueeze(3), self.mask_S.unsqueeze(2).unsqueeze(3))
+        
         # if(self.opt.classification):
         self.fake_B_dec_max = self.netG.module.upsample4(util.decode_max_ab(self.fake_B_class, self.opt))
         self.fake_B_distr = self.netG.module.softmax(self.fake_B_class)
@@ -126,6 +159,12 @@ class Pix2PixModel(BaseModel):
         self.fake_B_dec_mean = self.netG.module.upsample4(util.decode_mean(self.fake_B_distr, self.opt))
 
         self.fake_B_entr = self.netG.module.upsample4(-torch.sum(self.fake_B_distr * torch.log(self.fake_B_distr + 1.e-10), dim=1, keepdim=True))
+        
+        self.fake_G = self.nnenc.encode_points_mtx_nd(self.fake_B_reg.cpu().detach()[:, :, ::4, ::4], axis=1)
+        self.fake_G = self.fake_G.type(torch.FloatTensor)
+        self.fake_G = torch.nan_to_num(self.fake_G, nan=0.0, posinf=0.0, neginf=0.0)
+        self.fake_G = torch.mean(self.fake_G, dim=3)
+        self.fake_G = torch.mean(self.fake_G, dim=2)
         # embed()
 
     def backward_D(self):
@@ -171,6 +210,9 @@ class Pix2PixModel(BaseModel):
         self.loss_G_fake_hint = 10 * torch.mean(self.criterionL1(self.fake_B_reg * self.mask_B_nc, self.hint_B * self.mask_B_nc).type(torch.cuda.FloatTensor)) / mask_avg
         self.loss_G_real_hint = 10 * torch.mean(self.criterionL1(self.real_B * self.mask_B_nc, self.hint_B * self.mask_B_nc).type(torch.cuda.FloatTensor)) / mask_avg
 
+        # Loss for global color
+        self.loss_G_global = 10 * torch.mean(self.criterionL1(self.fake_G, self.hint_G).type(torch.cuda.FloatTensor))
+
         # self.loss_G_L1 = torch.mean(self.criterionL1(self.fake_B, self.real_B))
         # self.loss_G_Huber = torch.mean(self.criterionHuber(self.fake_B, self.real_B))
         # self.loss_G_fake_real = torch.mean(self.criterionHuber(self.fake_B*self.mask_B_nc, self.real_B*self.mask_B_nc)) / mask_avg
@@ -182,7 +224,7 @@ class Pix2PixModel(BaseModel):
             pred_fake = self.netD(fake_AB)
             self.loss_G_GAN = self.criterionGAN(pred_fake, True)
         else:
-            self.loss_G = self.loss_G_CE * self.opt.lambda_A + self.loss_G_L1_reg
+            self.loss_G = self.loss_G_CE * self.opt.lambda_A + self.loss_G_L1_reg + self.loss_G_global
             # self.loss_G = self.loss_G_Huber*self.opt.lambda_A
 
     def backward_G(self):

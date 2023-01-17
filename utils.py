@@ -2,6 +2,7 @@ import torch
 from torch import nn
 import functools
 import numpy as np
+from PIL import Image
 
 A = 2 * 110.0 / 10.0 + 1
 B = A
@@ -35,7 +36,6 @@ def rgb2xyz(rgb): # rgb from [0,1]
     # xyz_from_rgb = np.array([[0.412453, 0.357580, 0.180423],
         # [0.212671, 0.715160, 0.072169],
         # [0.019334, 0.119193, 0.950227]])
-
     mask = (rgb > .04045).type(torch.FloatTensor)
     if(rgb.is_cuda):
         mask = mask.cuda()
@@ -148,57 +148,26 @@ def lab2rgb(lab_rs):
     return out
 
 
-def decode_ind_ab(data_q):
-    # Decode index into ab value
-    # INPUTS
-    #   data_q      Nx1xHxW \in [0,Q)
-    # OUTPUTS
-    #   data_ab     Nx2xHxW \in [-1,1]
-    
-    data_a = data_q/ A
-    data_b = data_q - data_a * A
-    data_ab = torch.cat((data_a,data_b),dim=1)
+def rgb2hsv(rgb):
+    r = rgb[:,:1,:,:]
+    g = rgb[:,1:2,:,:]
+    b = rgb[:,2:,:,:]
+    exp = torch.ones_like(r) * 2
+    max_ = torch.max(rgb, dim=1).values
+    min_ = torch.min(rgb, dim=1).values
 
-    if(data_q.is_cuda):
-        type_out = torch.cuda.FloatTensor
-    else:
-        type_out = torch.FloatTensor
-    data_ab = ((data_ab.type(type_out)*10.0) - 110.0) / 110.0
+    h = torch.acos((1.0 / 2.0 * (2 * r - g - b)) / torch.sqrt(torch.pow(r - g, exp) - (r - b) * (g - b)))
+    s = (torch.max(rgb, dim=1).values - min_) / max_
 
-    return data_ab
+    v = max_
+    hsv = torch.cat((h, s.unsqueeze(1), v.unsqueeze(1)), dim=1)
+    hsv = torch.nan_to_num(hsv, nan=0.0, posinf=0.0, neginf=0.0)
+    return hsv
 
 
-def decode_max_ab(data_ab_quant):
-    # Decode probability distribution by using bin with highest probability
-    # INPUTS
-    #   data_ab_quant   NxQxHxW \in [0,1]
-    # OUTPUTS
-    #   data_ab         Nx2xHxW \in [-1,1]
+def pil_loader(path: str):
+    # open path as file to avoid ResourceWarning (https://github.com/python-pillow/Pillow/issues/835)
+    with open(path, "rb") as f:
+        img = Image.open(f)
+        return img.convert("RGB")
 
-    data_q = torch.argmax(data_ab_quant, dim=1)[:,None,:,:]
-    return decode_ind_ab(data_q)
-
-
-def decode_mean(data_ab_quant):
-    # Decode probability distribution by taking mean over all bins
-    # INPUTS
-    #   data_ab_quant   NxQxHxW \in [0,1]
-    # OUTPUTS
-    #   data_ab_inf     Nx2xHxW \in [-1,1]
-
-    (N,Q,H,W) = data_ab_quant.shape
-    a_range = torch.arange(-110.0, 110.0 + 10.0, step=10.0).to(data_ab_quant.device)[None,:,None,None]
-    a_range = a_range.type(data_ab_quant.type())
-
-    # reshape to AB space
-    data_ab_quant = data_ab_quant.view((N,int(A),int(A),H,W))
-    data_a_total = torch.sum(data_ab_quant,dim=2)
-    data_b_total = torch.sum(data_ab_quant,dim=1)
-
-    # matrix multiply
-    data_a_inf = torch.sum(data_a_total * a_range,dim=1,keepdim=True)
-    data_b_inf = torch.sum(data_b_total * a_range,dim=1,keepdim=True)
-
-    data_ab_inf = torch.cat((data_a_inf,data_b_inf),dim=1)/110.0
-
-    return data_ab_inf

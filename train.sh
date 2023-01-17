@@ -1,4 +1,5 @@
 CHECKPOINTS_DIR=../checkpoints/
+BATCH_SIZE=32
 
 cd colorization-pytorch
 
@@ -6,6 +7,7 @@ mkdir -p $CHECKPOINTS_DIR
 
 # Train classification network on small training set first
 python train.py --name siggraph_class_small \
+                --batch_size $BATCH_SIZE \
                 --sample_p 1.0 \
                 --niter 100 \
                 --niter_decay 0 \
@@ -17,6 +19,7 @@ python train.py --name siggraph_class_small \
 mkdir -p $CHECKPOINTS_DIR/siggraph_class
 cp $CHECKPOINTS_DIR/siggraph_class_small/latest_net_G.pth $CHECKPOINTS_DIR/siggraph_class/
 python train.py --name siggraph_class \
+                --batch_size $BATCH_SIZE \
                 --sample_p 1.0 \
                 --niter 15 \
                 --niter_decay 0 \
@@ -25,10 +28,12 @@ python train.py --name siggraph_class \
                 --phase train \
                 --checkpoints_dir $CHECKPOINTS_DIR
 
+
 # Train regression model (with color hints)
 mkdir -p $CHECKPOINTS_DIR/siggraph_reg
 cp $CHECKPOINTS_DIR/siggraph_class/latest_net_G.pth $CHECKPOINTS_DIR/siggraph_reg/
 python train.py --name siggraph_reg \
+                --batch_size $BATCH_SIZE \
                 --sample_p .125 \
                 --niter 10 \
                 --niter_decay 0 \
@@ -37,10 +42,11 @@ python train.py --name siggraph_reg \
                 --phase train \
                 --checkpoints_dir $CHECKPOINTS_DIR
 
-# Turn down learning rate to 1e-6
+# # Turn down learning rate to 1e-6
 mkdir -p $CHECKPOINTS_DIR/siggraph_reg2
 cp $CHECKPOINTS_DIR/siggraph_reg/latest_net_G.pth $CHECKPOINTS_DIR/siggraph_reg2/
 python train.py --name siggraph_reg2 \
+                --batch_size $BATCH_SIZE \
                 --sample_p .125 \
                 --niter 5 \
                 --niter_decay 0 \

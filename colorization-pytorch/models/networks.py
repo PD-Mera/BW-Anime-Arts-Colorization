@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 from torch.nn import init
@@ -344,12 +345,50 @@ class SIGGRAPHGenerator(nn.Module):
         self.upsample4 = nn.Sequential(*[nn.Upsample(scale_factor=4, mode='nearest'), ])
         self.softmax = nn.Sequential(*[nn.Softmax(dim=1), ])
 
-    def forward(self, input_A, input_B, mask_B):
+
+        ###########################################################
+        self.convGlobal = nn.Sequential(
+            # nn.Conv1d(316, 512, kernel_size=3, stride=1, padding=1, bias=use_bias),
+            nn.Conv2d(316, 512, kernel_size=1, stride=1, padding=0, bias=use_bias),
+            # nn.Conv2d(316, 512, kernel_size=3, stride=1, padding=1),
+            # nn.Linear(316, 512, bias=use_bias),
+            nn.ReLU(),
+            norm_layer(512),
+
+            # nn.Conv1d(512, 512, kernel_size=3, stride=1, padding=1, bias=use_bias),
+            nn.Conv2d(512, 512, kernel_size=1, stride=1, padding=0, bias=use_bias),
+            # nn.Conv2d(512, 512, kernel_size=3, stride=1, padding=1),
+            # nn.Linear(512, 512, bias=use_bias),
+            nn.ReLU(),
+            norm_layer(512),
+
+            # nn.Conv1d(512, 512, kernel_size=3, stride=1, padding=1, bias=use_bias),
+            nn.Conv2d(512, 512, kernel_size=1, stride=1, padding=0, bias=use_bias),
+            # nn.Conv2d(512, 512, kernel_size=3, stride=1, padding=1),
+            # nn.Linear(512, 512, bias=use_bias),
+            nn.ReLU(),
+            norm_layer(512),
+
+            # nn.Conv1d(512, 512, kernel_size=3, stride=1, padding=1, bias=use_bias),
+            nn.Conv2d(512, 512, kernel_size=1, stride=1, padding=0, bias=use_bias),
+            # nn.Conv2d(512, 512, kernel_size=3, stride=1, padding=1),
+
+            # nn.Linear(512, 512, bias=use_bias),
+            nn.ReLU(),
+            norm_layer(512),
+        )
+        ############################################################
+
+    def forward(self, input_A, input_B, mask_B,
+                               input_G, mask_G,
+                               input_S, mask_S):
+        global_hint = self.convGlobal(torch.cat((input_G, mask_G, input_S, mask_S), dim=1))
         conv1_2 = self.model1(torch.cat((input_A, input_B, mask_B), dim=1))
         conv2_2 = self.model2(conv1_2[:, :, ::2, ::2])
         conv3_3 = self.model3(conv2_2[:, :, ::2, ::2])
         conv4_3 = self.model4(conv3_3[:, :, ::2, ::2])
-        conv5_3 = self.model5(conv4_3)
+        global_hint = torch.tile(global_hint, (1, 1, conv4_3.size()[2], conv4_3.size()[3]))
+        conv5_3 = self.model5(conv4_3 + global_hint)
         conv6_3 = self.model6(conv5_3)
         conv7_3 = self.model7(conv6_3)
         conv8_up = self.model8up(conv7_3) + self.model3short8(conv3_3)

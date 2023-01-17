@@ -2,6 +2,8 @@
 
 Colorize Black & White Anime Arts with user's input colors
 
+*I try to add Global Hint Networks but results is not good as I imagine*
+
 **No Hint**
 
 | Gray | Fake | Real |
@@ -13,6 +15,12 @@ Colorize Black & White Anime Arts with user's input colors
 | Gray | Local Hint | Fake | Real |
 | --- | --- | --- | --- |
 | ![gray](./assets/imgs/gray.jpg "gray") | ![local_hint](./assets/imgs/local/hint.jpg "local_hint") | ![fake](./assets/imgs/local/fake.jpg "fake") | ![real](./assets/imgs/test_img.jpg "real") |
+
+**Global Hint**
+
+| Gray | Local Hint | Fake | Real |
+| --- | --- | --- | --- |
+| ![gray](./assets/imgs/gray.jpg "gray") | ![local_hint](./assets/imgs/global/hint.jpg "local_hint") | ![fake](./assets/imgs/global/fake.jpg "fake") | ![real](./assets/imgs/test_img.jpg "real") |
 
 
 ## Environments and Dependencies
@@ -80,7 +88,7 @@ bash test.sh
 
 ## TODO
 
-- [ ] Add Global Hints
+- [x] Add Global Hints
 
 ## Acknowledgments
 

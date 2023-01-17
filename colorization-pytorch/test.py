@@ -58,13 +58,9 @@ if __name__ == '__main__':
             # img_path = [string.replace('%08d_%.3f' % (i, sample_p), '.', 'p')]
             data = util.get_colorization_data(data_raw, opt, ab_thresh=0., p=sample_p)
             print(i, data.keys())
-            torchvision.transforms.ToPILImage()(data["mask_B"][0]).convert("RGB").save(f'mask_B_{i}.jpg')
             for keys in data.keys():
-                print(keys ,data[keys])
+                print(keys)
                 
-                pass
-
-            exit()
             model.set_input(data)
             model.test(True)  # True means that losses will be computed
             visuals = util.get_subset_dict(model.get_current_visuals(), to_visualize)

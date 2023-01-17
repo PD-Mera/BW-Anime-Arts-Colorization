@@ -77,7 +77,6 @@ def rgb2xyz(rgb): # rgb from [0,1]
     # xyz_from_rgb = np.array([[0.412453, 0.357580, 0.180423],
         # [0.212671, 0.715160, 0.072169],
         # [0.019334, 0.119193, 0.950227]])
-
     mask = (rgb > .04045).type(torch.FloatTensor)
     if(rgb.is_cuda):
         mask = mask.cuda()
@@ -189,22 +188,43 @@ def lab2rgb(lab_rs, opt):
         # embed()
     return out
 
+
+def rgb2hsv(rgb):
+    r = rgb[:,:1,:,:]
+    g = rgb[:,1:2,:,:]
+    b = rgb[:,2:,:,:]
+    exp = torch.ones_like(r) * 2
+    max_ = torch.max(rgb, dim=1).values
+    min_ = torch.min(rgb, dim=1).values
+
+    h = torch.acos((1.0 / 2.0 * (2 * r - g - b)) / torch.sqrt(torch.pow(r - g, exp) - (r - b) * (g - b)))
+    s = (torch.max(rgb, dim=1).values - min_) / max_
+
+    v = max_
+    hsv = torch.cat((h, s.unsqueeze(1), v.unsqueeze(1)), dim=1)
+    hsv = torch.nan_to_num(hsv, nan=0.0, posinf=0.0, neginf=0.0)
+    return hsv
+
+
 def get_colorization_data(data_raw, opt, ab_thresh=5., p=.125, num_points=None):
     data = {}
-
     data_lab = rgb2lab(data_raw[0], opt)
+
+    data_hsv = rgb2hsv(data_raw[0])
     data['A'] = data_lab[:,[0,],:,:] # L Color
     data['B'] = data_lab[:,1:,:,:]   # AB color
+    data['S'] = data_hsv[:,1:2,:,:]  # Sarturation
 
     if(ab_thresh > 0): # mask out grayscale images
         thresh = 1. * ab_thresh / opt.ab_norm
         mask = torch.sum(torch.abs(torch.max(torch.max(data['B'],dim=3)[0],dim=2)[0]-torch.min(torch.min(data['B'],dim=3)[0],dim=2)[0]),dim=1) >= thresh
         data['A'] = data['A'][mask,:,:,:]
         data['B'] = data['B'][mask,:,:,:]
+        data['S'] = data['S'][mask,:,:,:]
         # print('Removed %i points'%torch.sum(mask==0).numpy())
         if(torch.sum(mask)==0):
             return None
-
+            
     return add_color_patches_rand_gt(data, opt, p=p, num_points=num_points)
 
 def add_color_patches_rand_gt(data,opt,p=.125,num_points=None,use_avg=True,samp='normal'):
