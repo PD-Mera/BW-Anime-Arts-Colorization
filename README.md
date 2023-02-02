@@ -64,11 +64,7 @@ data/
 
 ## Easy Use
 
-<<<<<<< HEAD
 For easy use, simply download pretrained weight from [here](https://drive.google.com/file/d/1HrMR3Holk2TSKQUCbmYHCZL5rDqu2Iag/view?usp=share_link) (10 * loss for global) or [here](https://drive.google.com/file/d/1XjLuJLB4ydWMvQq5-hhocO6DIy8vJH8F/view?usp=sharing) (100 * loss for global), modify config in `config.py` and run 
-=======
-For easy use, simply download pretrained weight from [here](https://drive.google.com/file/d/1wS6UCg2n2VoKs7g9PMqj4iJ19xp3-p4X/view?usp=sharing), modify config in `config.py` and run 
->>>>>>> bc8272b66f0d77763651406a003960d684929c0b
 
 ``` bash
 python infer.py
