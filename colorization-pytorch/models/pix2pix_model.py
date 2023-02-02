@@ -211,7 +211,7 @@ class Pix2PixModel(BaseModel):
         self.loss_G_real_hint = 10 * torch.mean(self.criterionL1(self.real_B * self.mask_B_nc, self.hint_B * self.mask_B_nc).type(torch.cuda.FloatTensor)) / mask_avg
 
         # Loss for global color
-        self.loss_G_global = 10 * torch.mean(self.criterionL1(self.fake_G, self.hint_G).type(torch.cuda.FloatTensor))
+        self.loss_G_global = 100 * torch.mean(self.criterionL1(self.fake_G, self.hint_G).type(torch.cuda.FloatTensor))
 
         # self.loss_G_L1 = torch.mean(self.criterionL1(self.fake_B, self.real_B))
         # self.loss_G_Huber = torch.mean(self.criterionHuber(self.fake_B, self.real_B))

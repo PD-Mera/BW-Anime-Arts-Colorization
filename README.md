@@ -64,7 +64,7 @@ data/
 
 ## Easy Use
 
-For easy use, simply download pretrained weight from [here](https://drive.google.com/file/d/1HrMR3Holk2TSKQUCbmYHCZL5rDqu2Iag/view?usp=share_link), modify config in `config.py` and run 
+For easy use, simply download pretrained weight from [here](https://drive.google.com/file/d/1HrMR3Holk2TSKQUCbmYHCZL5rDqu2Iag/view?usp=share_link) (10 * loss for global) or [here](https://drive.google.com/file/d/1XjLuJLB4ydWMvQq5-hhocO6DIy8vJH8F/view?usp=sharing) (100 * loss for global), modify config in `config.py` and run 
 
 ``` bash
 python infer.py
@@ -89,6 +89,7 @@ bash test.sh
 ## TODO
 
 - [x] Add Global Hints
+- [ ] Improve Global Hints
 
 ## Acknowledgments
 
